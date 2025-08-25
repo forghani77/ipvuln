@@ -2,6 +2,9 @@
 
 *Inspired by [Lazy-Hunter](https://github.com/iamunixtz/Lazy-Hunter)*
 
+<img width="1373" height="701" alt="image-redacted_dot_app" src="https://github.com/user-attachments/assets/d31ae67c-341b-4b49-9272-88379bf6c24e" />
+
+
 `ipvuln` is a command-line tool written in Go that leverages Shodan's Internetdb API to perform reconnaissance on IP addresses. It can identify open ports, associated hostnames, and known vulnerabilities (CVEs) for target IPs.
 
 ## Features
