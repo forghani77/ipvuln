@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -227,8 +228,24 @@ func main() {
 	sendIPs := func(scanner *bufio.Scanner) {
 		for scanner.Scan() {
 			ip := strings.TrimSpace(scanner.Text())
-			if ip != "" {
-				ipChan <- ip
+			if ip == "" {
+				continue
+			}
+
+			parsedIP, ipNet, err := net.ParseCIDR(ip)
+			if err == nil {
+				// It's a CIDR, iterate over all IPs in the range
+				for ip := parsedIP.Mask(ipNet.Mask); ipNet.Contains(ip); inc(ip) {
+					ipChan <- ip.String()
+				}
+			} else {
+				// Not a CIDR, try to parse as a single IP
+				parsedIP := net.ParseIP(ip)
+				if parsedIP != nil {
+					ipChan <- parsedIP.String()
+				} else {
+					fmt.Printf("%s[ERROR]%s Invalid IP or CIDR format: %s\n", red, reset, ip)
+				}
 			}
 		}
 		if err := scanner.Err(); err != nil {
@@ -240,7 +257,31 @@ func main() {
 	// Check if any specific flags were provided
 	if *ipFlag != "" {
 		fmt.Printf("%s[INFO]%s Target: %s\n", yellow, reset, *ipFlag)
-		ipChan <- *ipFlag
+		// Handle single IP or CIDR from -ip flag
+		input := strings.TrimSpace(*ipFlag)
+		if input == "" {
+			fmt.Printf("%s[ERROR]%s No input specified for -ip flag.\n\n", red, reset)
+			flag.Usage()
+			os.Exit(1)
+		}
+
+		ip, ipNet, err := net.ParseCIDR(input)
+		if err == nil {
+			// It's a CIDR, iterate over all IPs in the range
+			for ip := ip.Mask(ipNet.Mask); ipNet.Contains(ip); inc(ip) {
+				ipChan <- ip.String()
+			}
+		} else {
+			// Not a CIDR, try to parse as a single IP
+			ip := net.ParseIP(input)
+			if ip != nil {
+				ipChan <- ip.String()
+			} else {
+				fmt.Printf("%s[ERROR]%s Invalid IP or CIDR format for -ip flag: %s\n", red, reset, input)
+				flag.Usage()
+				os.Exit(1)
+			}
+		}
 		close(ipChan)
 	} else if *fileFlag != "" {
 		fmt.Printf("%s[INFO]%s Target File: %s\n", yellow, reset, *fileFlag)
@@ -270,4 +311,14 @@ func main() {
 	wg.Wait()
 
 	fmt.Printf("\n%s[INFO]%s Scan Completed\n", yellow, reset)
+}
+
+// inc increments the IP address
+func inc(ip net.IP) {
+	for i := len(ip) - 1; i >= 0; i-- {
+		ip[i]++
+		if ip[i] > 0 {
+			break
+		}
+	}
 }
