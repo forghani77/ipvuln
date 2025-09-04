@@ -9,7 +9,7 @@
 
 ## Features
 
-*   **IP Scanning:** Scan single IP addresses, a list of IPs from a file, or IPs piped via standard input.
+*   **IP Scanning:** Scan single IP addresses, a list of IPs from a file, or IPs piped via standard input. Automatically parses CIDR ranges.
 *   **Port Discovery:** Lists open ports found on the target IP(s).
 *   **Hostname Resolution:** Displays hostnames associated with the target IP(s).
 *   **CVE Identification:** Fetches and displays Common Vulnerabilities and Exposures (CVEs) linked to the IP, including severity levels and summaries.
@@ -74,4 +74,10 @@ cat ips.txt | ./ipvuln -host -ports -c 20
 
 ```bash
 echo "54.198.147.148" | ./ipvuln -cve+ports
+```
+
+**Scan a CIDR range from stdin:**
+
+```bash
+echo "192.168.1.0/30" | ./ipvuln
 ```
